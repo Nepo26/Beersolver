@@ -1,10 +1,11 @@
-"""Exercise 3C.6"""
-
+"""Exercise ThirdChapter"""
+import logging
+from configparser import ConfigParser
 from dataclasses import dataclass, field
-from pprint import pprint
 
-import numpy as np
-from numpy import array, ndarray, arange
+from numpy import array, ndarray, arange, sqrt, vdot, cross
+from utils.log import log_general
+from utils.math import is_parallel
 
 
 @dataclass
@@ -16,17 +17,17 @@ class Result:
         ------
         distance: float
             distance between E and the line DB
-        a: float
-            current value of a
-        c: float
-            current value of c
+        ab_length: float
+            current length of AB
+        cd_length: float
+            current length of CD
     """
     distance: float = field(default=None)
-    a: float = field(default=None)
-    c: float = field(default=None)
+    ab_length: float = field(default=None)
+    cd_length: float = field(default=None)
 
     def __str__(self):
-        return f'({self.distance},{self.a},{self.c})'
+        return f'({self.distance},{self.ab_length},{self.cd_length})'
 
 
 @dataclass
@@ -40,11 +41,14 @@ class Resolution:
     def plot(self):
         pass
 
+    def get_config(self):
+        pass
+
 
 @dataclass
 class ThreeCSix(Resolution):
     """
-    Produce an object of the problem 3C.6.
+    Produce an object of the problem ThirdChapter.
 
         Parameters
         ----------
@@ -68,13 +72,18 @@ class ThreeCSix(Resolution):
 
         Methods
         -------
+        get_minimal_distance()
+
+        calculate_distance_e_db()
+
+        solve()
 
         Examples
         --------
         Solve the problem with the default values
 
         >> from numpy import array
-        >> a = ThreeCSix(
+        >> a = ThirdChapter(
                 array([0.0, 4, 96]),
                 array([90.0, 52.0, 0.0]),
                 array([120.0, 36.0, 100.0]),
@@ -90,6 +99,8 @@ class ThreeCSix(Resolution):
     # Unit
     # TODO Implement conversion and use of [pint](https://pint.readthedocs.io/en/0.6/numpy.html)
 
+    # a
+
     # Position of the first duct
     position_a: ndarray = field(default=array([0.0, 96.0, 4.0]))
 
@@ -99,8 +110,8 @@ class ThreeCSix(Resolution):
     # Position of the second duct
     position_c: ndarray = field(default=array([120.0, 36.0, 100.0]))
 
-    lambda_ab: ndarray = field(default=array([7/9, -4/9, 4/9]))
-    lambda_cd: ndarray = field(default=array([-7/9, 4/9, -4/9]))
+    lambda_ab: ndarray = field(default=array([7 / 9, -4 / 9, 4 / 9]))
+    lambda_cd: ndarray = field(default=array([-7 / 9, 4 / 9, -4 / 9]))
 
     upper_range: float = field(default=36.0)
     lower_range: float = field(default=9.0)
@@ -112,6 +123,12 @@ class ThreeCSix(Resolution):
     def __post_init__(self):
         self.range = arange(self.lower_range, self.upper_range + self.step, self.step)
 
+        # Check if lambda_ab and lambda_cd are parallels
+        if not is_parallel():
+            log_general(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
+
+            raise Exception(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
+
     @staticmethod
     def get_minimal_distance(values: list[Result]) -> Result:
         """
@@ -121,66 +138,83 @@ class ThreeCSix(Resolution):
         """
         largest_info = None
 
-        pprint(values)
-        pass
         for value in values:
-            distance = value['distance']
-            a = value['a']
-            c = value['c']
+            log_general(value, logging.DEBUG)
+
+            distance = value.distance
+            ab_length = value.ab_length
+            cd_length = value.cd_length
 
             if largest_info is None:
-                largest_info = Result(distance, a, c)
+                largest_info = Result(distance, ab_length, cd_length)
 
             if distance < largest_info.distance:
                 largest_info.distance = distance
-                largest_info = Result(distance, a, c)
+                largest_info = Result(distance, ab_length, cd_length)
 
         return largest_info
 
-    def calculate_distance_e_db(self, a: float, c: float) -> Result:
+    def calculate_distance_e_db(self, ab_length: float, cd_length: float) -> Result:
         """
         Calculate the distance between the E point and the line DB
-
-        :param a: the current size of a
-        :type a: float
-        :param c: the current size of e
-        :type c: float
+        :param ab_length: the current length of AB
+        :type ab_length: float
+        :param cd_length: the current length of CD
+        :type cd_length: float
         :return: Result(a,b,distance)
         """
 
-        a_value = a
-        c_value = a
-
-
-        # Get the vector for the value of A over the unitary vector lambda AB
-        a *= self.lambda_ab
+        # Get the vector for the value of AB over the unitary vector lambda AB
+        ab_vector = ab_length * self.lambda_ab
 
         # Get the vector for the value of C over the unitary vector lambda CD
-        c *= self.lambda_cd
+        cd_vector = cd_length * self.lambda_cd
 
         r_a = self.position_a
         r_c = self.position_c
         r_e = self.position_e
 
         # Get r_b and r_d
-        r_b = a + r_a
-        r_d = c + r_c
+        r_b = ab_vector + r_a
+        r_d = cd_vector + r_c
 
         # Get r_db and r_de
         r_db = r_b - r_d
         r_de = r_e - r_d
 
         # Get the lambda DB value
-        lambda_db = r_db / (np.sqrt(np.vdot(r_db, r_db)))
+        lambda_db = r_db / (sqrt(vdot(r_db, r_db)))
 
-        line_e = np.cross(lambda_db, r_de)
+        line_e = cross(lambda_db, r_de)
 
         # Get the distance of the E Point to the DB line
-        distance_e = np.sqrt(np.vdot(line_e, line_e))
+        distance_e = sqrt(vdot(line_e, line_e))
 
-        return Result(distance_e, a_value, c_value)
+        return Result(distance_e, ab_length, cd_length)
 
-    def solve(self):
+    def get_config(self) -> ConfigParser:
+        config = ConfigParser()
+
+        config["positions"] = {
+            "a": self.position_a,
+            "b": self.position_b,
+            "c": self.position_c,
+        }
+
+        config["lambdas"] = {
+            "lambda_ab": self.lambda_ab,
+            "lambda_cd": self.lambda_cd
+        }
+
+        config["range"] = {
+            "upper_range": self.upper_range,
+            "lower_range": self.upper_range,
+            "step": self.step
+        }
+
+        return config
+
+    def solve(self) -> Result:
         """
         Solves the basic exercise and set the results' field
         :return: Result
@@ -188,11 +222,11 @@ class ThreeCSix(Resolution):
 
         # Loops by all possibilites for the size of a and c determined by the range
         values = []
-        for a in self.range:
-            for c in self.range:
-                distance_e = self.calculate_distance_e_db(a, c)
+        for ab_length in self.range:
+            for cd_length in self.range:
+                distance_e = self.calculate_distance_e_db(ab_length, cd_length)
 
-                values.append({"distance": distance_e.distance, "a": distance_e.a, "c": distance_e.c})
+                values.append(Result(distance_e.distance, ab_length, cd_length))
 
         self.raw_results = values
 
@@ -200,14 +234,7 @@ class ThreeCSix(Resolution):
 
         return self.result
 
-a = ThreeCSix(
-    array([0.0, 4, 96]),
-    array([90.0, 52.0, 0.0]),
-    array([120.0, 36.0, 100.0]),
-    array([7/9, -4/9, 4/9]),
-    array([-7/9, 4/9, -4/9]),
-    36.0,
-    9.0
-)
 
-print(a.solve())
+length = ThreeCSix()
+
+print(length.solve())

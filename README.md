@@ -8,4 +8,4 @@ P.Beer"*
 The general recommendation for the script was that it needed at least
 two types of input and at least 2 types of output.
 
-- [3C.6](exercises/3C.6/README.md)
+- [3C.6](exercises/ThirdChapter/README.md)
