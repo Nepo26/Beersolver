@@ -11,7 +11,9 @@ print("Vetor unitário lambda_CD:",lambda_CD)
 
 print("Produto escalar de lambda_AB e lambda_CD:",np.vdot(lambda_AB, lambda_CD))
 
-r_A = np.array([0.0, 4, 96])
+# Isn't x y z and not x z y ?
+# r_A = np.array([0.0, 4, 96])
+r_A = np.array([0.0, 96, 4])
 print("Vetor A: ", r_A)
 
 r_C = np.array([120.0, 36.0, 100.0])

@@ -105,7 +105,7 @@ class ThreeCSix(Resolution):
     position_a: ndarray = field(default=array([0.0, 96.0, 4.0]))
 
     # Position of the thermometer
-    position_e: ndarray = field(default=array([90.0, 52.0, 4.0]))
+    position_e: ndarray = field(default=array([90.0, 52.0, 0.0]))
 
     # Position of the second duct
     position_c: ndarray = field(default=array([120.0, 36.0, 100.0]))
@@ -125,7 +125,7 @@ class ThreeCSix(Resolution):
 
         # Check if lambda_ab and lambda_cd are parallels
         if not is_parallel(self.lambda_ab, self.lambda_cd):
-            log_general(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
+            log_general(f"{self.lambda_ab} and {self.lambda_cd} are not parallel", logging.DEBUG)
 
             raise Exception(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
 
@@ -136,23 +136,24 @@ class ThreeCSix(Resolution):
         :param values: list of results from the distance of e from the line DB
         :type values: list[Result]
         """
-        largest_info = None
+        minimal_result = None
 
         for value in values:
-            log_general(value, logging.DEBUG)
+            log_general(str(value), logging.DEBUG)
 
-            distance = value.distance
+            dist = value.distance
             ab_length = value.ab_length
             cd_length = value.cd_length
 
-            if largest_info is None:
-                largest_info = Result(distance, ab_length, cd_length)
+            if minimal_result is None:
+                minimal_result = Result(dist, ab_length, cd_length)
 
-            if distance < largest_info.distance:
-                largest_info.distance = distance
-                largest_info = Result(distance, ab_length, cd_length)
+            if dist < minimal_result.distance:
+                minimal_result.distance = dist
+                minimal_result = Result(dist, ab_length, cd_length)
 
-        return largest_info
+        log_general(f"minimal_distance: {minimal_result}")
+        return minimal_result
 
     def calculate_distance_e_db(self, ab_length: float, cd_length: float) -> Result:
         """
@@ -166,26 +167,38 @@ class ThreeCSix(Resolution):
 
         # Get the vector for the value of AB over the unitary vector lambda AB
         ab_vector = ab_length * self.lambda_ab
+        log_general(f"ab_vector = {ab_vector}", logging.DEBUG)
 
         # Get the vector for the value of C over the unitary vector lambda CD
         cd_vector = cd_length * self.lambda_cd
+        log_general(f"cd_vector = {cd_vector}", logging.DEBUG)
 
         r_a = self.position_a
         r_c = self.position_c
         r_e = self.position_e
+        log_general(f"r_a = {r_a}", logging.DEBUG)
+        log_general(f"r_c = {r_c}", logging.DEBUG)
+        log_general(f"r_e = {r_e}", logging.DEBUG)
 
         # Get r_b and r_d
         r_b = ab_vector + r_a
         r_d = cd_vector + r_c
+        log_general(f"r_b = {r_b}", logging.DEBUG)
+        log_general(f"r_d = {r_d}", logging.DEBUG)
 
         # Get r_db and r_de
         r_db = r_b - r_d
         r_de = r_e - r_d
 
+        log_general(f"r_db = {r_db}", logging.DEBUG)
+        log_general(f"r_de = {r_db}", logging.DEBUG)
+
         # Get the lambda DB value
         lambda_db = r_db / (sqrt(vdot(r_db, r_db)))
+        log_general(f"λ_db = {lambda_db}", logging.DEBUG)
 
         line_e = cross(lambda_db, r_de)
+        log_general(f"line_e = {line_e}", logging.DEBUG)
 
         # Get the distance of the E Point to the DB line
         distance_e = sqrt(vdot(line_e, line_e))
@@ -235,6 +248,6 @@ class ThreeCSix(Resolution):
         return self.result
 
 
-length = ThreeCSix()
-
-print(length.solve())
+exercise = ThreeCSix()
+distance = exercise.calculate_distance_e_db(9, 9)
+print(distance)
