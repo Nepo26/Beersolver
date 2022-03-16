@@ -124,7 +124,7 @@ class ThreeCSix(Resolution):
         self.range = arange(self.lower_range, self.upper_range + self.step, self.step)
 
         # Check if lambda_ab and lambda_cd are parallels
-        if not is_parallel():
+        if not is_parallel(self.lambda_ab, self.lambda_cd):
             log_general(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
 
             raise Exception(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
