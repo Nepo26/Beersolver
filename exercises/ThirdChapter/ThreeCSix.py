@@ -152,7 +152,7 @@ class ThreeCSix(Resolution):
                 minimal_result.distance = dist
                 minimal_result = Result(dist, ab_length, cd_length)
 
-        log_general(f"minimal_distance: {minimal_result}")
+        log_general(f"minimal_distance: {minimal_result}", logging.DEBUG)
         return minimal_result
 
     def calculate_distance_e_db(self, ab_length: float, cd_length: float) -> Result:
@@ -248,6 +248,9 @@ class ThreeCSix(Resolution):
         return self.result
 
 
-exercise = ThreeCSix()
-distance = exercise.calculate_distance_e_db(9, 9)
-print(distance)
+# exercise = ThreeCSix()
+# distance = exercise.calculate_distance_e_db(9, 9)
+# print(distance)
+#
+# exercise = ThreeCSix()
+# print(exercise.solve())
