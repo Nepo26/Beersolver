@@ -1,13 +1,10 @@
 import logging
-import os
 import sys
-
-import click
 import numpy as np
 import exercises.ThirdChapter.csix as csix
 import configparser
-
-
+import click
+from utils.log import InternalLogger
 
 def get_float(value: str):
     """
@@ -67,7 +64,21 @@ def get_config_from_file(path: str):
     return config
 
 
-@click.command()
+@click.group()
+@click.option("--debug", is_flag=True, help="Start debugging mode")
+@click.pass_context
+def cli(ctx, debug):
+    if debug:
+        print("Debugging mode is ON")
+        logger = InternalLogger(debug)
+    else:
+        logger = InternalLogger()
+
+    ctx.obj = logger
+
+
+@cli.command()
+@click.pass_obj
 @click.option('--position_a', '--pos-a', nargs=3, type=click.UNPROCESSED, callback=float_ndarray_callback,
               help='Position A in format x y z (Required)')
 @click.option('--position_e', '--pos-e', nargs=3, type=click.UNPROCESSED, callback=float_ndarray_callback,
@@ -87,9 +98,9 @@ def get_config_from_file(path: str):
 @click.option('--input', '-i', type=click.Path(exists=True),
               help='Get information for the exercise from input file. WARNING: THIS '
                    'CONFIGURATION TAKES PRECEDENCE OVER THE OTHER ARGUMENTS')
-@click.option('--generate_config', '--gen', '-g', is_flag=True, help='Generate skeleton config on the current path',)
-@click.pass_obj
-def exercise_three_c_6(logger, position_a: np.ndarray, position_e: np.ndarray, position_c: np.ndarray, lambda_ab: np.ndarray,
+@click.option('--generate_config', '--gen', '-g', is_flag=True, help='Generate skeleton config on the current path', )
+def exercise_three_c_6(logger, position_a: np.ndarray, position_e: np.ndarray, position_c: np.ndarray,
+                       lambda_ab: np.ndarray,
                        lambda_cd: np.ndarray,
                        upper_range: float, lower_range: float, step: float, input: str, generate_config: bool) -> None:
     """
@@ -147,7 +158,7 @@ def exercise_three_c_6(logger, position_a: np.ndarray, position_e: np.ndarray, p
     logger.log(f"step: {step}", logging.DEBUG)
 
     problem_instance = csix.ThreeCSix(logger, position_a, position_e, position_c, lambda_ab, lambda_cd, upper_range,
-                                      lower_range, step )
+                                      lower_range, step)
 
     logger.log(problem_instance, logging.DEBUG)
 
