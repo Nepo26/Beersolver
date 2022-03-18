@@ -1,7 +1,7 @@
 <p align="center">
 <img src="images/logo.gif">
  
-<p align="center">A script for solving Beer proposed exercises <br>
+<p align="center">A script for solving vector mechanics Ferdinand P. Beer proposed exercises<br>
 <code>pip3 install beersolver && beersolver</code>
 </p>
 
