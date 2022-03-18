@@ -107,10 +107,11 @@ def exercise_three_c_6(logger, position_a: np.ndarray, position_e: np.ndarray, p
     3C.6 exercise cli access
     """
     if generate_config:
-        problem_instance = csix.ThreeCSix()
+        problem_instance = csix.ThreeCSix(logger)
         config_parser = problem_instance.get_config()
         with open('example.ini', 'w') as configfile:
             config_parser.write(configfile)
+
         sys.exit()
 
     if input:
