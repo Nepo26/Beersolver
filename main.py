@@ -7,7 +7,7 @@ from utils.log import InternalLogger
 
 
 @click.group()
-@click.option("--debug", is_flag=True, help="start debugging mode")
+@click.option("--debug", is_flag=True, help="Start debugging mode")
 @click.pass_context
 def cli(ctx, debug):
     if debug:

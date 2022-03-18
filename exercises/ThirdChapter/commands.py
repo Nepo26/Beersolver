@@ -93,7 +93,7 @@ def exercise_three_c_6(logger, position_a: np.ndarray, position_e: np.ndarray, p
                        lambda_cd: np.ndarray,
                        upper_range: float, lower_range: float, step: float, input: str, generate_config: bool) -> None:
     """
-    Function that handles the access to the CLI command related to the 3C.6 exercise
+    3C.6 exercise cli access
     """
     if generate_config:
         problem_instance = csix.ThreeCSix()
