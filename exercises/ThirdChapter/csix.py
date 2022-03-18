@@ -2,9 +2,9 @@
 import logging
 from configparser import ConfigParser
 from dataclasses import dataclass, field
+import numpy as np
 
-from numpy import array, ndarray, arange, sqrt, vdot, cross
-from utils.log import log_general
+from utils.log import InternalLogger
 from utils.math import is_parallel
 
 
@@ -68,7 +68,7 @@ class ThreeCSix(Resolution):
         lower_range: float
             lower part of the range that determines the size of A and the size C
         step: float,optional
-            step to mve on the range, also determines the precision of the answer
+            step to move on the range, also determines the precision of the answer
 
         Methods
         -------
@@ -99,38 +99,37 @@ class ThreeCSix(Resolution):
     # Unit
     # TODO Implement conversion and use of [pint](https://pint.readthedocs.io/en/0.6/numpy.html)
 
-    # a
+    logger: InternalLogger = field()
 
     # Position of the first duct
-    position_a: ndarray = field(default=array([0.0, 96.0, 4.0]))
+    position_a: np.ndarray = field(default=np.array([0.0, 96.0, 4.0]))
 
     # Position of the thermometer
-    position_e: ndarray = field(default=array([90.0, 52.0, 0.0]))
+    position_e: np.ndarray = field(default=np.array([90.0, 52.0, 0.0]))
 
     # Position of the second duct
-    position_c: ndarray = field(default=array([120.0, 36.0, 100.0]))
+    position_c: np.ndarray = field(default=np.array([120.0, 36.0, 100.0]))
 
-    lambda_ab: ndarray = field(default=array([7 / 9, -4 / 9, 4 / 9]))
-    lambda_cd: ndarray = field(default=array([-7 / 9, 4 / 9, -4 / 9]))
+    lambda_ab: np.ndarray = field(default=np.array([7 / 9, -4 / 9, 4 / 9]))
+    lambda_cd: np.ndarray = field(default=np.array([-7 / 9, 4 / 9, -4 / 9]))
 
     upper_range: float = field(default=36.0)
     lower_range: float = field(default=9.0)
 
-    range: ndarray = field(init=False)
+    range: np.ndarray = field(init=False)
 
     step: float = field(default=1.0)
 
     def __post_init__(self):
-        self.range = arange(self.lower_range, self.upper_range + self.step, self.step)
+        self.range = np.arange(self.lower_range, self.upper_range + self.step, self.step)
 
         # Check if lambda_ab and lambda_cd are parallels
         if not is_parallel(self.lambda_ab, self.lambda_cd):
-            log_general(f"{self.lambda_ab} and {self.lambda_cd} are not parallel", logging.DEBUG)
+            self.logger.log(f"{self.lambda_ab} and {self.lambda_cd} should be parallel", logging.DEBUG)
 
-            raise Exception(f"{self.lambda_ab} and {self.lambda_cd} are not parallel")
+            raise Exception(f"{self.lambda_ab} and {self.lambda_cd} should be parallel")
 
-    @staticmethod
-    def get_minimal_distance(values: list[Result]) -> Result:
+    def get_minimal_distance(self, values: list[Result]) -> Result:
         """
         Get minimal distance on a list of results
         :param values: list of results from the distance of e from the line DB
@@ -139,7 +138,7 @@ class ThreeCSix(Resolution):
         minimal_result = None
 
         for value in values:
-            log_general(str(value), logging.DEBUG)
+            self.logger.log(str(value), logging.DEBUG)
 
             dist = value.distance
             ab_length = value.ab_length
@@ -152,7 +151,7 @@ class ThreeCSix(Resolution):
                 minimal_result.distance = dist
                 minimal_result = Result(dist, ab_length, cd_length)
 
-        log_general(f"minimal_distance: {minimal_result}", logging.DEBUG)
+        self.logger.log(f"minimal_distance: {minimal_result}", logging.DEBUG)
         return minimal_result
 
     def calculate_distance_e_db(self, ab_length: float, cd_length: float) -> Result:
@@ -167,61 +166,78 @@ class ThreeCSix(Resolution):
 
         # Get the vector for the value of AB over the unitary vector lambda AB
         ab_vector = ab_length * self.lambda_ab
-        log_general(f"ab_vector = {ab_vector}", logging.DEBUG)
+        self.logger.log(f"ab_vector = {ab_vector}", logging.DEBUG)
 
         # Get the vector for the value of C over the unitary vector lambda CD
         cd_vector = cd_length * self.lambda_cd
-        log_general(f"cd_vector = {cd_vector}", logging.DEBUG)
+        self.logger.log(f"cd_vector = {cd_vector}", logging.DEBUG)
 
         r_a = self.position_a
         r_c = self.position_c
         r_e = self.position_e
-        log_general(f"r_a = {r_a}", logging.DEBUG)
-        log_general(f"r_c = {r_c}", logging.DEBUG)
-        log_general(f"r_e = {r_e}", logging.DEBUG)
+        self.logger.log(f"r_a = {r_a}", logging.DEBUG)
+        self.logger.log(f"r_c = {r_c}", logging.DEBUG)
+        self.logger.log(f"r_e = {r_e}", logging.DEBUG)
 
         # Get r_b and r_d
         r_b = ab_vector + r_a
         r_d = cd_vector + r_c
-        log_general(f"r_b = {r_b}", logging.DEBUG)
-        log_general(f"r_d = {r_d}", logging.DEBUG)
+        self.logger.log(f"r_b = {r_b}", logging.DEBUG)
+        self.logger.log(f"r_d = {r_d}", logging.DEBUG)
 
         # Get r_db and r_de
         r_db = r_b - r_d
         r_de = r_e - r_d
 
-        log_general(f"r_db = {r_db}", logging.DEBUG)
-        log_general(f"r_de = {r_db}", logging.DEBUG)
+        self.logger.log(f"r_db = {r_db}", logging.DEBUG)
+        self.logger.log(f"r_de = {r_db}", logging.DEBUG)
 
         # Get the lambda DB value
-        lambda_db = r_db / (sqrt(vdot(r_db, r_db)))
-        log_general(f"λ_db = {lambda_db}", logging.DEBUG)
+        lambda_db = r_db / (np.sqrt(np.vdot(r_db, r_db)))
+        self.logger.log(f"λ_db = {lambda_db}", logging.DEBUG)
 
-        line_e = cross(lambda_db, r_de)
-        log_general(f"line_e = {line_e}", logging.DEBUG)
+        line_e = np.cross(lambda_db, r_de)
+        self.logger.log(f"line_e = {line_e}", logging.DEBUG)
 
         # Get the distance of the E Point to the DB line
-        distance_e = sqrt(vdot(line_e, line_e))
+        distance_e = np.sqrt(np.vdot(line_e, line_e))
 
         return Result(distance_e, ab_length, cd_length)
 
     def get_config(self) -> ConfigParser:
+        """
+        Return basic configuration to populate a configuration
+        :return: ConfigParser
+        """
         config = ConfigParser()
 
         config["positions"] = {
-            "a": self.position_a,
-            "b": self.position_b,
-            "c": self.position_c,
+            "position_a_x": self.position_a[0],
+            "position_a_y": self.position_a[1],
+            "position_a_z": self.position_a[2],
+
+            "position_e_x": self.position_e[0],
+            "position_e_y": self.position_e[1],
+            "position_e_z": self.position_e[2],
+
+            "position_c_x": self.position_c[0],
+            "position_c_y": self.position_c[1],
+            "position_c_z": self.position_c[2],
         }
 
         config["lambdas"] = {
-            "lambda_ab": self.lambda_ab,
-            "lambda_cd": self.lambda_cd
+            "lambda_ab_x": self.lambda_ab[0],
+            "lambda_ab_y": self.lambda_ab[1],
+            "lambda_ab_z": self.lambda_ab[2],
+
+            "lambda_cd_x": self.lambda_cd[0],
+            "lambda_cd_y": self.lambda_cd[1],
+            "lambda_cd_z": self.lambda_cd[2]
         }
 
         config["range"] = {
             "upper_range": self.upper_range,
-            "lower_range": self.upper_range,
+            "lower_range": self.lower_range,
             "step": self.step
         }
 
@@ -238,7 +254,7 @@ class ThreeCSix(Resolution):
         for ab_length in self.range:
             for cd_length in self.range:
                 distance_e = self.calculate_distance_e_db(ab_length, cd_length)
-
+                self.logger.log(f"distance_e: {distance_e}", logging.DEBUG)
                 values.append(Result(distance_e.distance, ab_length, cd_length))
 
         self.raw_results = values
@@ -248,9 +264,3 @@ class ThreeCSix(Resolution):
         return self.result
 
 
-# exercise = ThreeCSix()
-# distance = exercise.calculate_distance_e_db(9, 9)
-# print(distance)
-#
-# exercise = ThreeCSix()
-# print(exercise.solve())
